@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Custom CSS for body and container to override/enhance Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-size: cover; /* Ensures background images cover the entire area */
+            background-position: center; /* Centers the background image */
+            background-repeat: no-repeat; /* Prevents background image from repeating */
+            background-attachment: fixed; /* Makes the background image fixed while content scrolls */
+            min-height: 100vh; /* Ensures the body takes at least the full viewport height */
+            display: flex; /* Uses flexbox for centering content */
+            align-items: center; /* Centers content vertically */
+            justify-content: center; /* Centers content horizontally */
+            overflow-y: auto; /* Allows vertical scrolling if content overflows */
+            position: relative; /* Needed for positioning the pseudo-element overlay */
+            /* Default general food-related background for the entire application, can be overridden by JS */
+            background-image: url('https://images.unsplash.com/photo-1543353071-873f17a7e868?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+        }
+
+        /* Semi-transparent overlay for better text readability over background images */
+        body::before {
+            content: '';
+            position: fixed; /* Fixed position to cover the entire viewport */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.2); /* Subtle dark overlay */
+            z-index: 1; /* Ensures it's above the background but below the main container */
+        }
+
+        /* Main content container styling */
+        .container {
+            width: 90%; /* Responsive width for smaller screens */
+            height: auto; /* Height adjusts based on content */
+            overflow-y: auto; /* Enables vertical scrolling if content exceeds height */
+            position: relative; /* Ensures proper z-index and flow */
+            display: flex; /* Flexbox for column layout of sections */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2; /* Ensures container is above the overlay */
+            background-color: transparent; /* Makes the container background fully transparent */
+            border-radius: 0; /* Removes any border-radius */
+            box-shadow: none; /* Removes any shadow */
+            padding: 2rem; /* Added padding to the container for internal spacing */
+            max-width: 600px; /* Limits the maximum width of the central container */
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem; /* Adjusts padding for smaller screens */
+                width: 95%; /* Makes it slightly wider on smaller screens */
+            }
+        }
+
+        /* Styling for individual sections (home, auth, recipe-finder) */
+        .section {
+            display: none; /* Hidden by default, shown by JavaScript */
+            width: 100%;
+            max-width: 500px; /* Max width for content sections */
+            text-align: center;
+            padding: 0.5rem; /* Reduced padding for compact layout */
+        }
+
+        .section.active {
+            display: block; /* Displays the active section */
+        }
+
+        /* Main title styling */
+        .container h1 {
+            color: rgba(68, 68, 68, 0.7); /* Dark gray with increased transparency */
+        }
+
+        /* Styling for the centered logo image */
+        .centered-logo {
+            margin: 1rem auto; /* Centers horizontally with vertical spacing */
+            display: block; /* Ensures it takes its own line and respects margin: auto */
+            width: auto; /* Maintains aspect ratio */
+            height: 120px; /* Fixed height */
+            opacity: 0.8; /* Applies transparency */
+            transition: transform 0.3s ease-in-out; /* Smooth transition for hover effect */
+        }
+
+        .centered-logo:hover {
+            transform: scale(1.05); /* Slightly enlarges on hover */
+            opacity: 1; /* Fully opaque on hover */
+        }
+
+        /* Section title styling */
+        .section h2 {
+            color: rgba(109, 76, 65, 0.7); /* Brownish tone with increased transparency */
+        }
+
+        /* General styling for input fields, buttons, and textareas */
+        input, button, textarea {
+            border-radius: 0.5rem; /* Smaller rounded corners */
+            padding: 0.5rem 0.875rem; /* Reduced padding */
+            border: 1px solid #D1D5DB; /* Light gray border */
+        }
+
+        /* Placeholder text transparency */
+        input::placeholder {
+            color: rgba(107, 114, 128, 0.6); /* Tailwind's default gray-400 with transparency */
+        }
+
+        /* Button transition effects */
+        button {
+            transition: all 0.2s ease-in-out;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Gradient button styling */
+        .gradient-button {
+            background: linear-gradient(to right, #FF8A65, #FFC107); /* Soft orange to amber gradient */
+            color: white; /* White text for good contrast */
+            font-weight: 600;
+            border: none;
+        }
+
+        .gradient-button:hover {
+            background: linear-gradient(to right, #FFC107, #FF8A65); /* Reverse gradient on hover */
+        }
+
+        /* Styling for individual recipe cards */
+        .recipe-card {
+            background-color: #fff; /* White background */
+            border: 1px solid #e2e8f0; /* Light border */
+            border-radius: 0.75rem; /* Rounded corners */
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* Subtle shadow */
+            text-align: left;
+        }
+
+        /* General text within sections and recipe output with transparency */
+        .container p,
+        .recipe-output p,
+        .recipe-output ul li,
+        .recipe-output ol li {
+            color: rgba(0, 0, 0, 0.6); /* Transparent black for general text */
+            margin-bottom: 0.5rem;
+            background-color: transparent;
+        }
+
+        /* Adjust specific heading colors in recipe output with transparency */
+        .recipe-output h3 { /* Recipe Name */
+            color: rgba(230, 81, 0, 0.7); /* Orange with increased transparency */
+            text-align: left;
+            margin-bottom: 0.5rem;
+        }
+
+        .recipe-output h4 { /* Ingredients/Instructions titles */
+            color: rgba(109, 76, 65, 0.7); /* Brownish tone with increased transparency */
+            text-align: left;
+            margin-bottom: 0.5rem;
+        }
+
+        /* List padding for recipe output */
+        .recipe-output ul, .recipe-output ol {
+            padding-left: 1.5rem;
+        }
+
+        /* Bullet and number color for lists */
+        .recipe-output ul li::marker, .recipe-output ol li::marker {
+            color: #3B82F6; /* Blue color for markers */
+        }
+
+        /* Fade-in animation for section transitions */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading spinner animation */
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3B82F6; /* Blue color for the spinner animation */
+            border-radius: 50%; /* Makes it a circle */
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite; /* Spin animation */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Top-right navigation styles */
+        .top-nav {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000; /* Ensures it stays on top of other content */
+        }
+
+        .top-nav a {
+            display: inline-block;
+            margin-left: 0.75rem; /* Spacing between links */
+            color: rgba(255, 255, 255, 0.7); /* White color with 70% transparency */
+            font-weight: 600; /* Bolder text */
+            text-decoration: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease-in-out;
+            background-color: transparent; /* Transparent background */
+            box-shadow: none; /* Removed shadow */
+        }
+
+        .top-nav a:hover {
+            background-color: rgba(255, 255, 255, 0.2); /* Light translucent background on hover */
+            color: #388E3C; /* Darker green on hover */
+            text-decoration: underline;
+        }
+
+        /* Styles for the square recipe type boxes (reused on home and finder) */
+        .recipe-type-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.8); /* Slightly transparent white fallback */
+            background-size: cover; /* Cover the box area */
+            background-position: center; /* Center the background image */
+            background-repeat: no-repeat; /* No repeating */
+            border-radius: 0.75rem; /* Rounded corners */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            text-align: center;
+            color: #333; /* Dark text color */
+            font-weight: 600;
+            padding: 0.5rem; /* Internal padding */
+            border: 2px solid transparent; /* Default transparent border */
+            position: relative; /* For overlay */
+            overflow: hidden; /* Hide overflow from image */
+        }
+
+        /* Overlay for text readability on top of background images */
+        .recipe-type-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.5); /* Semi-transparent white overlay */
+            border-radius: 0.75rem;
+            z-index: 0; /* Behind content */
+        }
+
+        /* Ensure the span (text) is above the overlay */
+        .recipe-type-box span {
+            z-index: 1; /* Bring text to front of overlay */
+            position: relative; /* Needed for z-index to work */
+            color: #333; /* Ensure text is visible */
+        }
+
+
+        /* Active state for the boxes */
+        .recipe-type-box.active-selection {
+            border-color: #3B82F6; /* Blue border for active selection */
+            background-color: rgba(255, 255, 255, 0.95); /* Slightly less transparent */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Slightly stronger shadow */
+            transform: scale(1.02); /* Keep it slightly enlarged */
+        }
+
+        .recipe-type-box:hover {
+            transform: translateY(-3px) scale(1.02); /* Lift and slightly enlarge on hover */
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15); /* More prominent shadow on hover */
+            background-color: #fff; /* Fully opaque on hover */
+        }
+        .recipe-type-box:hover::before {
+            background-color: rgba(255, 255, 255, 0.3); /* Less opaque overlay on hover */
+        }
+
+
+        /* Adjustments for home page boxes */
+        #home-section .recipe-type-box {
+            width: 150px;
+            height: 150px;
+            font-size: 1.1rem;
+        }
+
+        /* Specific background images for home page boxes (UPDATED & !important) */
+        #home-veg-box {
+            background-image: url('https://media.istockphoto.com/id/589415708/photo/fresh-fruits-and-vegetables.jpg?s=612x612&w=0&k=20&c=aBFGUU-98pnoht73co8r2TZIKF3MDtBBu9KSxtxK_C0=') !important; /* Vegetarian food */
+        }
+        #home-non-veg-box {
+            background-image: url('https://i.pinimg.com/736x/20/92/48/2092483fde63dc2c9e3f2a0038c8af1f.jpg') !important; /* Non-vegetarian food */
+        }
+        #home-dessert-box {
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Desserts.jpg/1200px-Desserts.jpg') !important; /* Dessert */
+        }
+
+
+
+        /* Adjustments for finder page boxes (make them bigger than home page as requested "after login") */
+        #recipe-finder-section .recipe-type-box {
+            width: 200px; /* Increased from 170px to make them bigger */
+            height: 200px; /* Increased from 170px to make them bigger */
+            font-size: 1.3rem; /* Slightly larger font for better readability */
+            margin: 15px; /* Add more space between boxes */
+        }
+        /* No img tag inside .recipe-type-box, so no img styling needed here */
+
+        /* Specific background images for finder page boxes */
+        #finder-veg-box {
+            background-image: url('https://media.istockphoto.com/id/589415708/photo/fresh-fruits-and-vegetables.jpg?s=612x612&w=0&k=20&c=aBFGUU-98pnoht73co8r2TZIKF3MDtBBu9KSxtxK_C0=")' ) !important; /* Different vegetarian food */
+        }
+        #finder-non-veg-box {
+            background-image: url('https://i.pinimg.com/736x/20/92/48/2092483fde63dc2c9e3f2a0038c8af1f.jpg') !important; /* Different non-vegetarian food */
+        }
+        #finder-dessert-box {
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Desserts.jpg/1200px-Desserts.jpg') !important; /* Different dessert */
+        }
+
+
+        /* Ensure the cloned box on selected-type-display also uses the larger size and image from finder */
+        #selected-type-display .recipe-type-box {
+            width: 200px; /* Match new finder box size */
+            height: 200px; /* Match new finder box size */
+            font-size: 1.3rem; /* Match new finder box font size */
+            /* Background image will be cloned from the original finder box, so no need to set here explicitly */
+        }
+        /* No img tag inside .recipe-type-box, so no img styling needed here */
+
+
+        /* Added for "Change Type" button */
+        .change-type-button {
+            background-color: #6B7280; /* Gray-500 */
+            color: white;
+            font-weight: 600;
+            border: none;
+            transition: all 0.2s ease-in-out;
+            margin-top: 1rem; /* Space from the cloned box */
+        }
+
+        .change-type-button:hover {
+            background-color: #4B5563; /* Gray-700 */
+        }
+
+        /* --- Modal Styles --- */
+        .custom-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); /* Darker overlay */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000; /* Ensure it's on top of everything */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .custom-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .custom-modal-content {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .custom-modal-overlay.show .custom-modal-content {
+            transform: scale(1);
+        }
+
+        .custom-modal-content p {
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .custom-modal-content button {
+            background-color: #3B82F6; /* Blue button */
+            color: white;
+            padding: 0.6rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .custom-modal-content button:hover {
+            background-color: #2563EB; /* Darker blue on hover */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 relative">
+
+    <div id="top-nav-container" class="top-nav hidden">
+        <a href="#" id="top-nav-logout-btn" class="text-red-500 hover:text-red-700">Logout</a>
+    </div>
+
+    <div class="container relative flex flex-col items-center justify-center p-6">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6 text-center">REciPE FInDEr</h1>
+
+        <div id="home-section" class="section active fade-in">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-3">Welcome!</h2>
+            <img src="https://borderfields.co.uk/wp-content/uploads/2023/09/Recipe-Finder.png" alt="Recipe Finder Logo" class="centered-logo">
+            <p class="text-gray-600 text-sm mb-4">
+                Discover a world of culinary possibilities with **REciPE FInDEr**! Our innovative **AI-powered application** transforms your available ingredients into delicious, creative, and personalized recipes. Whether you're looking to minimize food waste, explore new cuisines, or simply get inspiration for your next meal, REciPE FInDEr is here to help you revolutionize your kitchen experience.
+            </p>
+            <p class="text-gray-600 text-sm mb-4">
+                No more staring blankly into the fridge wondering what to cook! Simply **enter what you have in your pantry or fridge**, and let our intelligent assistant do the rest. You'll receive **step-by-step instructions** and a clear **list of ingredients**, making cooking enjoyable and stress-free. Our advanced algorithms analyze your input to suggest dishes that truly match your ingredients, preferences, and even your mood.
+            </p>
+            <p class="text-gray-600 text-sm mb-6">
+                Join our community of home cooks and embark on a culinary adventure tailored just for you! **Sign up or log in** to save your favorite recipes, create shopping lists, and track your cooking history. Get ready to unlock your inner chef and turn everyday ingredients into extraordinary meals.
+            </p>
+
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Or, choose a recipe type to get started!</h3>
+            <div class="flex justify-center flex-wrap gap-4 mb-6">
+                <div id="home-veg-box" class="recipe-type-box veg">
+                    <span>Veg</span>
+                </div>
+                <div id="home-non-veg-box" class="recipe-type-box non-veg">
+                    <span>Non-Veg</span>
+                </div>
+                <div id="home-dessert-box" class="recipe-type-box dessert">
+                    <span>Dessert</span>
+                </div>
+            </div>
+            <button id="get-started-btn" class="gradient-button text-white font-semibold py-2 px-6 rounded-full text-lg shadow-md hover:shadow-lg mt-6">Login / Sign Up</button>
+        </div>
+
+        <div id="auth-section" class="section">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-3">Login or Sign Up</h2>
+            <div id="login-form-container" class="space-y-2.5 w-full max-w-xs mx-auto">
+                <input type="email" id="login-email" placeholder="Email Address" class="w-full px-2.5 py-1.5 border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none rounded-md text-sm">
+                <div class="relative w-full">
+                    <input type="password" id="login-password" placeholder="Password" class="w-full pr-9 px-2.5 py-1.5 border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none rounded-md text-sm">
+                    <span class="absolute inset-y-0 right-0 pr-1.5 flex items-center text-gray-500 cursor-pointer" id="toggle-login-password">
+                        <i class="fas fa-eye text-xs"></i>
+                    </span>
+                </div>
+                <button id="login-submit-btn" class="w-full gradient-button text-white font-semibold py-2 px-4 rounded-md text-sm shadow-md hover:shadow-lg">Login</button>
+                <a href="#" class="block text-xs text-blue-600 hover:underline mt-1">Forgot Password?</a>
+                <a href="#" id="show-signup-form-btn" class="block text-xs text-blue-600 hover:underline mt-1">Don't have an account?</a>
+            </div>
+
+            <div id="signup-form-container" class="space-y-2.5 w-full max-w-xs mx-auto hidden">
+                <input type="email" id="signup-email" placeholder="Email Address" class="w-full px-2.5 py-1.5 border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none rounded-md text-sm">
+                <div class="relative w-full">
+                    <input type="password" id="signup-password" placeholder="Create a Password" class="w-full pr-9 px-2.5 py-1.5 border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none rounded-md text-sm">
+                    <span class="absolute inset-y-0 right-0 pr-1.5 flex items-center text-gray-500 cursor-pointer" id="toggle-signup-password">
+                        <i class="fas fa-eye text-xs"></i>
+                    </span>
+                </div>
+                <div class="relative w-full">
+                    <input type="password" id="confirm-password" placeholder="Confirm Password" class="w-full pr-9 px-2.5 py-1.5 border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none rounded-md text-sm">
+                    <span class="absolute inset-y-0 right-0 pr-1.5 flex items-center text-gray-500 cursor-pointer" id="toggle-confirm-password">
+                        <i class="fas fa-eye text-xs"></i>
+                    </span>
+                </div>
+                <button id="signup-submit-btn" class="w-full gradient-button text-white font-semibold py-2 px-4 rounded-md text-sm shadow-md hover:shadow-lg">Sign Up</button>
+                <a href="#" id="show-login-form-btn" class="block text-xs text-blue-600 hover:underline mt-1">Already have an account?</a>
+            </div>
+
+            <div id="auth-message" class="mt-2 text-red-600 font-medium hidden text-xs"></div>
+        </div>
+
+        <div id="recipe-finder-section" class="section fade-in">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-4">Find Your Next Recipe!</h2>
+
+            <div id="finder-type-selection-container" class="flex justify-center flex-wrap gap-3 mb-6">
+                <div id="finder-veg-box" class="recipe-type-box veg">
+                    <span>Veg</span>
+                </div>
+                <div id="finder-non-veg-box" class="recipe-type-box non-veg">
+                    <span>Non-Veg</span>
+                </div>
+                <div id="finder-dessert-box" class="recipe-type-box dessert">
+                    <span>Dessert</span>
+                </div>
+            </div>
+            <div id="selected-type-display" class="hidden flex flex-col items-center justify-center gap-3 mb-6">
+                <button id="change-type-btn" class="change-type-button text-white font-semibold py-2 px-4 rounded-md text-sm shadow-md hover:shadow-lg">Change Type</button>
+            </div>
+
+
+            <div id="ingredients-search-container" class="hidden flex flex-col sm:flex-row items-center justify-center space-y-2.5 sm:space-y-0 sm:space-x-2.5 mb-4 w-full max-w-md mx-auto">
+                <input type="text" id="ingredients-input" placeholder="e.g., tomato, onion, potato" class="flex-grow px-2.5 py-1.5 border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none rounded-md text-sm">
+                <button id="search-recipe-btn" class="gradient-button text-white font-semibold py-2 px-4 rounded-md text-sm shadow-md hover:shadow-lg w-full sm:w-auto">Search</button>
+            </div>
+
+
+            <div id="loading-spinner" class="hidden loading-spinner mx-auto mb-2.5"></div>
+            <div id="recipe-results" class="p-4 rounded-xl text-gray-800 text-left overflow-auto max-h-[40vh] w-full max-w-md mx-auto text-xs flex flex-col gap-4">
+                <p class="text-gray-500">Select a meal type above to begin!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal Structure -->
+    <div id="custom-modal-overlay" class="custom-modal-overlay">
+        <div class="custom-modal-content">
+            <p id="custom-modal-message">This is a custom message.</p>
+            <button id="custom-modal-close-btn">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // State Variables
+        let loggedInUser = null;
+        // Dummy user storage for demonstration. In a real app, this would use a database.
+        const users = {};
+        let selectedRecipeType = null; // Default to null, meaning no type selected initially
+
+        // Background image URLs for each section
+        const backgroundImages = {
+            home: 'url("https://cdn.pixabay.com/photo/2017/08/05/12/33/flat-lay-2583213_1280.jpg")', // Kitchen scene with vegetables
+            auth: 'url("https://cdn.pixabay.com/photo/2017/08/05/12/33/flat-lay-2583213_1280.jpg")', // Same as home
+            recipeFinder: 'url("https://img.freepik.com/premium-photo/ingredients-cooking-white-kitchen-table-herbs-spices-vegetables-top-view-with-space-design-vertical_1040174-1581.jpg?semt=ais_hybrid&w=740")', // Ingredients on a table
+        };
+
+        // Specific background image URLs for finder type boxes (for dynamic assignment)
+        const finderTypeBoxImages = {
+            'veg': 'url("https://media.istockphoto.com/id/589415708/photo/fresh-fruits-and-vegetables.jpg?s=612x612&w=0&k=20&c=aBFGUU-98pnoht73co8r2TZIKF3MDtBBu9KSxtxK_C0=")',
+            'non-veg': 'url("https://i.pinimg.com/736x/20/92/48/2092483fde63dc2c9e3f2a0038c8af1f.jpg")',
+            'dessert': 'url("https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Desserts.jpg/1200px-Desserts.jpg")'
+        };
+
+        // Placeholder examples for ingredients input based on type
+        const ingredientsPlaceholders = {
+            'veg': 'e.g., tomato, spinach, paneer, chickpeas',
+            'non-veg': 'e.g., chicken, eggs, fish, beef, shrimp',
+            'dessert': 'e.g., flour, sugar, chocolate, berries, milk'
+        };
+
+        // Keywords for ingredient validation
+        const categoryKeywords = {
+            vegForbidden: ['chicken', 'beef', 'pork', 'fish', 'shrimp', 'lamb', 'meat', 'eggs', 'bacon', 'ham', 'turkey', 'sausage'],
+            dessertForbidden: ['chicken', 'beef', 'pork', 'fish', 'shrimp', 'lamb', 'meat', 'eggs', 'bacon', 'ham', 'turkey', 'sausage', 'onion', 'garlic', 'tomato', 'potato', 'rice', 'pasta', 'pepper', 'salt', 'oil', 'soy sauce', 'broth']
+        };
+
+
+        // DOM Elements - Declared here for global access after DOMContentLoaded
+        let body;
+        let homeSection;
+        let authSection;
+        let recipeFinderSection;
+
+        let topNavContainer;
+        let topNavLogoutBtn;
+
+        let getStartedBtn;
+        let homeVegBox; // Home page Veg box
+        let homeNonVegBox; // Home page Non-Veg box
+        let homeDessertBox; // Home page Dessert box
+
+        // Elements for Recipe Finder page boxes
+        let finderTypeSelectionContainer; // Container holding all 3 type boxes
+        let finderVegBox;
+        let finderNonVegBox;
+        let finderDessertBox;
+        let finderRecipeTypeBoxes; // Array of all finder boxes (veg, non-veg, dessert)
+
+        let selectedTypeDisplay; // New: Container for the single selected box and change button
+        let changeTypeBtn; // New: Button to change recipe type
+
+        let ingredientsSearchContainer; // Container for input and search button
+
+        let loginFormContainer;
+        let signupFormContainer;
+
+        let loginEmailInput;
+        let loginPasswordInput;
+        let loginSubmitBtn;
+        let toggleLoginPassword;
+        let showSignupFormBtn;
+
+        let signupEmailInput;
+        let signupPasswordInput;
+        let confirmPasswordInput;
+        let signupSubmitBtn;
+        let toggleSignupPassword;
+        let toggleConfirmPassword;
+        let showLoginFormBtn;
+
+        let authMessage;
+
+        let ingredientsInput;
+        let searchRecipeBtn;
+        let loadingSpinner;
+        let recipeResultsDiv;
+
+        // Modal Elements
+        let customModalOverlay;
+        let customModalMessage;
+        let customModalCloseBtn;
+
+
+        // Ensure all DOM elements are loaded before attempting to access them
+        document.addEventListener('DOMContentLoaded', () => {
+            body = document.body;
+            homeSection = document.getElementById('home-section');
+            authSection = document.getElementById('auth-section');
+            recipeFinderSection = document.getElementById('recipe-finder-section');
+
+            topNavContainer = document.getElementById('top-nav-container');
+            topNavLogoutBtn = document.getElementById('top-nav-logout-btn');
+
+            getStartedBtn = document.getElementById('get-started-btn');
+            homeVegBox = document.getElementById('home-veg-box');
+            homeNonVegBox = document.getElementById('home-non-veg-box');
+            homeDessertBox = document.getElementById('home-dessert-box');
+
+            // Get new finder page box elements
+            finderTypeSelectionContainer = document.getElementById('finder-type-selection-container');
+            finderVegBox = document.getElementById('finder-veg-box');
+            finderNonVegBox = document.getElementById('finder-non-veg-box');
+            finderDessertBox = document.getElementById('finder-dessert-box');
+            finderRecipeTypeBoxes = document.querySelectorAll('#finder-type-selection-container .recipe-type-box'); // Select all boxes in finder section
+
+            selectedTypeDisplay = document.getElementById('selected-type-display'); // Get new element
+            changeTypeBtn = document.getElementById('change-type-btn'); // Get new button
+
+            ingredientsSearchContainer = document.getElementById('ingredients-search-container'); // Get the new container
+
+
+            loginFormContainer = document.getElementById('login-form-container');
+            signupFormContainer = document.getElementById('signup-form-container');
+
+            loginEmailInput = document.getElementById('login-email');
+            loginPasswordInput = document.getElementById('login-password');
+            loginSubmitBtn = document.getElementById('login-submit-btn');
+            toggleLoginPassword = document.getElementById('toggle-login-password');
+            showSignupFormBtn = document.getElementById('show-signup-form-btn');
+
+            signupEmailInput = document.getElementById('signup-email');
+            signupPasswordInput = document.getElementById('signup-password');
+            confirmPasswordInput = document.getElementById('confirm-password');
+            signupSubmitBtn = document.getElementById('signup-submit-btn');
+            toggleSignupPassword = document.getElementById('toggle-signup-password');
+            toggleConfirmPassword = document.getElementById('toggle-confirm-password');
+            showLoginFormBtn = document = document.getElementById('show-login-form-btn');
+
+            authMessage = document.getElementById('auth-message');
+
+            ingredientsInput = document.getElementById('ingredients-input');
+            searchRecipeBtn = document.getElementById('search-recipe-btn');
+            loadingSpinner = document.getElementById('loading-spinner');
+            recipeResultsDiv = document.getElementById('recipe-results');
+
+            // Get Modal Elements
+            customModalOverlay = document.getElementById('custom-modal-overlay');
+            customModalMessage = document.getElementById('custom-modal-message');
+            customModalCloseBtn = document.getElementById('custom-modal-close-btn');
+
+
+            // Initial setup - Show home section and set its background
+            showSection(homeSection);
+
+            // Event Listeners for Home Page
+            if (getStartedBtn) {
+                getStartedBtn.addEventListener('click', () => toggleAuthForm('login'));
+            }
+            if (homeVegBox) {
+                homeVegBox.addEventListener('click', () => navigateToRecipeFinderWithType('veg'));
+            }
+            if (homeNonVegBox) {
+                homeNonVegBox.addEventListener('click', () => navigateToRecipeFinderWithType('non-veg'));
+            }
+            if (homeDessertBox) {
+                homeDessertBox.addEventListener('click', () => navigateToRecipeFinderWithType('dessert'));
+            }
+
+            // Event Listeners for Finder Page Boxes
+            finderRecipeTypeBoxes.forEach(box => {
+                box.addEventListener('click', () => {
+                    const type = box.id.replace('finder-', '').replace('-box', '');
+                    selectRecipeTypeBox(type);
+                });
+            });
+
+            // Event Listener for Change Type Button
+            if (changeTypeBtn) {
+                changeTypeBtn.addEventListener('click', () => {
+                    selectedRecipeType = null; // Clear selected type
+                    finderTypeSelectionContainer.classList.remove('hidden'); // Show all boxes
+                    selectedTypeDisplay.classList.add('hidden'); // Hide the cloned box and button
+                    ingredientsSearchContainer.classList.add('hidden'); // Hide ingredients input
+                    ingredientsInput.placeholder = 'e.g., tomato, onion, potato'; // Reset placeholder
+                    recipeResultsDiv.innerHTML = '<p class="text-gray-500">Select a meal type above to begin!</p>'; // Reset results
+                    updateBackground('home'); // Go back to home background when changing type
+                });
+            }
+
+            // Event Listeners for Auth Section
+            if (showSignupFormBtn) {
+                showSignupFormBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleAuthForm('signup');
+                });
+            }
+            if (showLoginFormBtn) {
+                showLoginFormBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleAuthForm('login');
+                });
+            }
+            if (loginSubmitBtn) {
+                loginSubmitBtn.addEventListener('click', handleLogin);
+            }
+            if (signupSubmitBtn) {
+                signupSubmitBtn.addEventListener('click', handleSignup);
+            }
+            if (toggleLoginPassword) {
+                toggleLoginPassword.addEventListener('click', () => togglePasswordVisibility(loginPasswordInput, toggleLoginPassword.querySelector('i')));
+            }
+            if (toggleSignupPassword) {
+                toggleSignupPassword.addEventListener('click', () => togglePasswordVisibility(signupPasswordInput, toggleSignupPassword.querySelector('i')));
+            }
+            if (toggleConfirmPassword) {
+                toggleConfirmPassword.addEventListener('click', () => togglePasswordVisibility(confirmPasswordInput, toggleConfirmPassword.querySelector('i')));
+            }
+
+            // Event Listeners for Recipe Finder Section
+            if (searchRecipeBtn) {
+                searchRecipeBtn.addEventListener('click', getRecipe);
+            }
+            if (ingredientsInput) {
+                ingredientsInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        getRecipe();
+                    }
+                });
+            }
+
+            // Top Navigation Listeners
+            if (topNavLogoutBtn) {
+                topNavLogoutBtn.addEventListener('click', handleLogout);
+            }
+
+            // Modal Close Listener
+            if (customModalCloseBtn) {
+                customModalCloseBtn.addEventListener('click', hideCustomModal);
+            }
+        });
+
+        // --- Core UI Logic ---
+
+        /**
+         * Hides all sections and displays the specified one with a fade-in effect.
+         * @param {HTMLElement} sectionElement The section to display.
+         */
+        function showSection(sectionElement) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active', 'fade-in');
+            });
+            sectionElement.classList.add('active', 'fade-in');
+
+            // Update background based on the active section
+            if (sectionElement === homeSection) {
+                updateBackground('home');
+            } else if (sectionElement === authSection) {
+                updateBackground('auth');
+            } else if (sectionElement === recipeFinderSection) {
+                updateBackground('recipeFinder');
+            }
+        }
+
+        /**
+         * Updates the body's background image.
+         * @param {string} sectionName Key from backgroundImages object (e.g., 'home', 'auth', 'recipeFinder').
+         */
+        function updateBackground(sectionName) {
+            body.style.backgroundImage = backgroundImages[sectionName];
+        }
+
+        /**
+         * Shows either the login or signup form and hides the other.
+         * @param {string} formType 'login' or 'signup'.
+         */
+        function toggleAuthForm(formType) {
+            showSection(authSection);
+            if (formType === 'login') {
+                loginFormContainer.classList.remove('hidden');
+                signupFormContainer.classList.add('hidden');
+            } else {
+                loginFormContainer.classList.add('hidden');
+                signupFormContainer.classList.remove('hidden');
+            }
+            authMessage.classList.add('hidden'); // Clear any previous auth messages
+            authMessage.textContent = '';
+        }
+
+        /**
+         * Toggles password input visibility.
+         * @param {HTMLInputElement} inputField The password input element.
+         * @param {HTMLElement} iconElement The eye icon element.
+         */
+        function togglePasswordVisibility(inputField, iconElement) {
+            const type = inputField.getAttribute('type') === 'password' ? 'text' : 'password';
+            inputField.setAttribute('type', type);
+            iconElement.classList.toggle('fa-eye');
+            iconElement.classList.toggle('fa-eye-slash');
+        }
+
+        /**
+         * Updates the top navigation bar based on login status.
+         */
+        function updateTopNav() {
+            if (loggedInUser) {
+                topNavContainer.classList.remove('hidden');
+            } else {
+                topNavContainer.classList.add('hidden');
+            }
+        }
+
+
+        // --- Authentication Logic ---
+
+        /**
+         * Handles user login.
+         */
+        function handleLogin() {
+            const email = loginEmailInput.value;
+            const password = loginPasswordInput.value;
+
+            if (!email || !password) {
+                displayAuthMessage('Please enter both email and password.');
+                return;
+            }
+
+            if (users[email] && users[email] === password) {
+                loggedInUser = email;
+                displayAuthMessage('Login successful!', false);
+                setTimeout(() => {
+                    showSection(recipeFinderSection);
+                    updateTopNav(); // Update top nav after login
+                    resetFinderSection(); // Reset finder section on successful login
+                }, 1000);
+            } else {
+                displayAuthMessage('Invalid email or password.');
+            }
+        }
+
+        /**
+         * Handles user signup.
+         */
+        function handleSignup() {
+            const email = signupEmailInput.value;
+            const password = signupPasswordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+
+            if (!email || !password || !confirmPassword) {
+                displayAuthMessage('Please fill in all fields.');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                displayAuthMessage('Passwords do not match.');
+                return;
+            }
+
+            if (users[email]) {
+                displayAuthMessage('User with this email already exists.');
+                return;
+            }
+
+            users[email] = password; // Store user
+            loggedInUser = email;
+            displayAuthMessage('Sign up successful! You are now logged in.', false);
+            setTimeout(() => {
+                showSection(recipeFinderSection);
+                updateTopNav(); // Update top nav after signup
+                resetFinderSection(); // Reset finder section on successful signup
+            }, 1000);
+        }
+
+        /**
+         * Handles user logout.
+         */
+        function handleLogout(e) {
+            e.preventDefault();
+            loggedInUser = null;
+            selectedRecipeType = null; // Clear selected type on logout
+            updateTopNav(); // Update top nav after logout (hides it)
+            showSection(homeSection); // Go back to home page
+            resetFinderSection(); // Reset finder section on logout
+        }
+
+        /**
+         * Displays authentication messages.
+         * @param {string} message The message to display.
+         * @param {boolean} isError Whether the message is an error (true) or success (false).
+         */
+        function displayAuthMessage(message, isError = true) {
+            authMessage.textContent = message;
+            authMessage.classList.remove('hidden', 'text-red-600', 'text-green-600');
+            authMessage.classList.add(isError ? 'text-red-600' : 'text-green-600');
+            authMessage.classList.add('fade-in'); // Add fade-in for messages
+        }
+
+        /**
+         * Displays a custom modal with a given message.
+         * @param {string} message The message to display in the modal.
+         */
+        function showCustomModal(message) {
+            customModalMessage.textContent = message;
+            customModalOverlay.classList.add('show');
+        }
+
+        /**
+         * Hides the custom modal.
+         */
+        function hideCustomModal() {
+            customModalOverlay.classList.remove('show');
+        }
+
+        // --- Recipe Finder Logic ---
+
+        /**
+         * Navigates to the recipe finder section and pre-selects a recipe type if provided.
+         * This function is specifically for the home page's "Get Started" and type boxes.
+         * @param {string} type 'veg', 'non-veg', or 'dessert'.
+         */
+        function navigateToRecipeFinderWithType(type) {
+            if (!loggedInUser) {
+                // If not logged in, go to auth section, don't pre-select type
+                toggleAuthForm('login');
+                return;
+            }
+            showSection(recipeFinderSection);
+            selectRecipeTypeBox(type); // Select the box and show ingredients input
+            updateBackground('recipeFinder'); // Set background for finder section
+        }
+
+        /**
+         * Resets the recipe finder section to its initial state (show type selection).
+         */
+        function resetFinderSection() {
+            ingredientsInput.value = '';
+            ingredientsInput.placeholder = 'e.g., tomato, onion, potato'; // Reset to default placeholder
+            recipeResultsDiv.innerHTML = '<p class="text-gray-500">Select a meal type above to begin!</p>';
+            loadingSpinner.classList.add('hidden');
+            finderTypeSelectionContainer.classList.remove('hidden'); // Show type selection
+            selectedTypeDisplay.classList.add('hidden'); // Hide selected type display
+            selectedTypeDisplay.innerHTML = ''; // Clear cloned box
+            ingredientsSearchContainer.classList.add('hidden'); // Hide search input
+            selectedRecipeType = null; // Clear selected type
+            // Ensure all boxes are unselected visually
+            finderRecipeTypeBoxes.forEach(box => box.classList.remove('active-selection'));
+        }
+
+        /**
+         * Handles the selection of a recipe type box in the finder section.
+         * Clones the selected box and moves it to selected-type-display, hides others.
+         * @param {string} type The type of recipe ('veg', 'non-veg', 'dessert').
+         * @param {boolean} isFromTopNav If true, means navigation from top bar, don't hide other boxes or show "Change Type" button initially.
+         */
+        function selectRecipeTypeBox(type, isFromTopNav = false) {
+            selectedRecipeType = type;
+            recipeResultsDiv.innerHTML = '<p class="text-gray-500">Enter ingredients and click search!</p>'; // Prompt user
+
+            // Update placeholder based on selected type
+            ingredientsInput.placeholder = ingredientsPlaceholders[type] || 'e.g., ingredients, separated by commas';
+
+
+            // Find the original box and apply its background image to the cloned one
+            let originalBox;
+            let originalBoxId; // To get the original box for its computed style
+
+            if (type === 'veg') {
+                originalBox = finderVegBox;
+                originalBoxId = 'finder-veg-box';
+            } else if (type === 'non-veg') {
+                originalBox = finderNonVegBox;
+                originalBoxId = 'finder-non-veg-box';
+            } else if (type === 'dessert') {
+                originalBox = finderDessertBox;
+                originalBoxId = 'finder-dessert-box';
+            }
+
+            if (originalBox) {
+                // Hide the full selection container and show the single selected type
+                finderTypeSelectionContainer.classList.add('hidden');
+                selectedTypeDisplay.classList.remove('hidden', 'flex-col');
+                selectedTypeDisplay.innerHTML = ''; // Clear previous cloned box
+
+                const clonedBox = originalBox.cloneNode(true); // Clone the box with its content
+                clonedBox.id = `selected-${type}-box`; // Give it a new ID to avoid conflicts
+                clonedBox.classList.add('active-selection'); // Add active styling
+                clonedBox.style.margin = '0'; // Remove margin to center it correctly in the new container
+
+                // Explicitly set the background image on the cloned element using the map
+                clonedBox.style.backgroundImage = finderTypeBoxImages[type];
+
+                selectedTypeDisplay.appendChild(clonedBox);
+                selectedTypeDisplay.appendChild(changeTypeBtn); // Add the change type button
+            }
+
+            ingredientsSearchContainer.classList.remove('hidden'); // Show ingredients input after type selection
+            updateBackground('recipeFinder'); // Ensure background is set to recipe finder theme
+        }
+
+
+        // Global declarations for common ingredients and spices to ensure they are always defined
+        // These will be assigned values within getRecipe based on user input and default logic.
+        let commonSalt = 'salt';
+        let commonPepper = 'black pepper';
+        let commonOil = 'cooking oil';
+        let commonWater = 'water';
+        let commonGarlic = 'minced garlic';
+        let commonGinger = 'grated ginger';
+        let commonCumin = 'cumin powder';
+        let commonTurmeric = 'turmeric powder';
+        let commonPaprika = 'paprika';
+        let commonCinnamon = 'cinnamon powder';
+        let commonVanilla = 'vanilla extract';
+
+
+        /**
+         * Fetches and displays multiple recipes based on ingredients and selected type.
+         */
+        async function getRecipe() {
+            const ingredients = ingredientsInput.value.trim();
+
+            if (!selectedRecipeType) {
+                recipeResultsDiv.innerHTML = '<p class="text-red-500">Please select a recipe type (Veg, Non-Veg, or Dessert) first.</p>';
+                return;
+            }
+
+            if (!ingredients) {
+                recipeResultsDiv.innerHTML = '<p class="text-red-500">Please enter some ingredients.</p>';
+                return;
+            }
+
+            // --- Ingredient Category Validation ---
+            const enteredIngredientsArray = ingredients.toLowerCase().split(',').map(item => item.trim());
+            let mismatchMessage = '';
+
+            if (selectedRecipeType === 'veg') {
+                const foundForbidden = enteredIngredientsArray.filter(ing =>
+                    categoryKeywords.vegForbidden.some(forbiddenWord => ing.includes(forbiddenWord))
+                );
+                if (foundForbidden.length > 0) {
+                    mismatchMessage = `You selected 'Veg' but your ingredients include non-vegetarian items like '${foundForbidden.join(', ')}'. Please adjust your ingredients or change the recipe type to 'Non-Veg'.`;
+                }
+            } else if (selectedRecipeType === 'dessert') {
+                const foundForbidden = enteredIngredientsArray.filter(ing =>
+                    categoryKeywords.dessertForbidden.some(forbiddenWord => ing.includes(forbiddenWord))
+                );
+                if (foundForbidden.length > 0) {
+                    mismatchMessage = `You selected 'Dessert' but your ingredients include savory items like '${foundForbidden.join(', ')}'. Please adjust your ingredients or change the recipe type.`;
+                }
+            }
+
+            if (mismatchMessage) {
+                showCustomModal(mismatchMessage);
+                loadingSpinner.classList.add('hidden'); // Ensure spinner is hidden if validation fails
+                return; // Stop function execution
+            }
+            // --- End Ingredient Category Validation ---
+
+
+            recipeResultsDiv.innerHTML = ''; // Clear previous results
+            loadingSpinner.classList.remove('hidden'); // Show spinner
+
+            // The prompt requests 3 recipes, and we will display all of them now.
+            // For a real AI, this prompt would guide the model to be specific.
+            const prompt = `Generate 3 detailed recipes based on the following:
+            Recipe Type: ${selectedRecipeType}
+            Ingredients Available: ${ingredients}
+
+            Each recipe should primarily use the provided ingredients. Include common cooking essentials and relevant spices even if not explicitly listed (e.g., salt, pepper, oil, water, common spices for the cuisine).
+            Each recipe should include:
+            1. Recipe Name (as <h3>)
+            2. Brief Description (as <p>)
+            3. Ingredients List (as <ul> with <h4> "Ingredients")
+            4. Step-by-step Instructions (as <ol> with <h4> "Instructions")
+            `;
+
+            // Parse the user's ingredients into a usable array
+            const userIngredients = ingredients.toLowerCase().split(',').map(item => item.trim()).filter(item => item !== '');
+
+            let recipes = [];
+
+            // Helper to capitalize first letter
+            const capitalize = (s) => {
+                if (typeof s !== 'string' || s.length === 0) return '';
+                return s.charAt(0).toUpperCase() + s.slice(1);
+            };
+
+            // Function to find an ingredient in the user's list, prioritizing user input
+            const getPrimaryIngredient = (index) => {
+                return userIngredients[index] ? capitalize(userIngredients[index]) : '';
+            };
+
+            // Function to get a dummy quantity
+            const getDummyQuantity = (ingredientName) => {
+                const lowerName = ingredientName.toLowerCase();
+                if (lowerName.includes('oil') || lowerName.includes('water') || lowerName.includes('milk') || lowerName.includes('broth') || lowerName.includes('sauce') || lowerName.includes('honey') || lowerName.includes('syrup')) return '2 tbsp';
+                if (lowerName.includes('sugar') || lowerName.includes('salt') || lowerName.includes('pepper') || lowerName.includes('cumin') || lowerName.includes('turmeric') || lowerName.includes('garlic') || lowerName.includes('ginger') || lowerName.includes('cinnamon') || lowerName.includes('vanilla') || lowerName.includes('paprika') || lowerName.includes('oregano') || lowerName.includes('flour')) return '1/2 tsp';
+                if (lowerName.includes('egg')) return '2 units';
+                if (lowerName.includes('chicken') || lowerName.includes('fish') || lowerName.includes('beef') || lowerName.includes('lamb') || lowerName.includes('pork') || lowerName.includes('shrimp')) return '300g';
+                return '1 unit';
+            };
+
+
+            // Common pantry items that are always included (unless specifically forbidden by meal type)
+            const basePantryItems = [
+                'cooking oil', 'salt', 'black pepper', 'water'
+            ];
+
+            // Add general spices based on meal type for richness
+            let impliedSpices = [];
+            if (selectedRecipeType === 'veg' || selectedRecipeType === 'non-veg') {
+                impliedSpices.push('garlic, minced', 'ginger, grated', 'cumin powder', 'turmeric powder');
+                if (selectedRecipeType === 'non-veg') impliedSpices.push('paprika');
+            } else if (selectedRecipeType === 'dessert') {
+                impliedSpices.push('sugar', 'vanilla extract', 'cinnamon powder');
+            }
+
+            // Combine user ingredients with implied basics and spices
+            // Ensure no duplicates and user's specific terms are preferred
+            let finalIngredientsSet = new Set(userIngredients);
+            basePantryItems.forEach(item => finalIngredientsSet.add(item));
+            impliedSpices.forEach(item => finalIngredientsSet.add(item));
+
+            const combinedIngredients = Array.from(finalIngredientsSet).sort();
+
+            // Function to dynamically get an ingredient if available in the combined list
+            const getAnyIngredient = (keywords, defaultIngredient) => {
+                for (const keyword of keywords) {
+                    if (combinedIngredients.includes(keyword)) {
+                        return capitalize(keyword);
+                    }
+                }
+                return defaultIngredient; // Fallback to a generic description if no match
+            };
+
+
+            // Assign values to the global common variables based on combinedIngredients
+            commonSalt = getAnyIngredient(['salt'], 'salt');
+            commonPepper = getAnyIngredient(['black pepper'], 'black pepper');
+            commonOil = getAnyIngredient(['oil', 'cooking oil', 'olive oil'], 'cooking oil');
+            commonWater = getAnyIngredient(['water'], 'water');
+            commonGarlic = getAnyIngredient(['garlic', 'minced garlic'], 'minced garlic');
+            commonGinger = getAnyIngredient(['ginger', 'grated ginger'], 'grated ginger');
+            commonCumin = getAnyIngredient(['cumin powder'], 'cumin powder');
+            commonTurmeric = getAnyIngredient(['turmeric powder'], 'turmeric powder');
+            commonPaprika = getAnyIngredient(['paprika'], 'paprika');
+            commonCinnamon = getAnyIngredient(['cinnamon', 'cinnamon powder'], 'cinnamon powder');
+            commonVanilla = getAnyIngredient(['vanilla extract'], 'vanilla extract');
+
+
+            // Dynamic recipe generation based on selected type and combined ingredients
+            if (selectedRecipeType === 'veg') {
+                const vegMain = getPrimaryIngredient(0) || getAnyIngredient(['potato', 'tomato', 'spinach', 'broccoli', 'carrot', 'onion', 'paneer', 'chickpeas', 'mushroom'], 'mixed vegetables');
+                const vegSecondary = getPrimaryIngredient(1) || getAnyIngredient(['onion', 'bell pepper', 'carrot', 'cucumber', 'lettuce', 'cabbage'], 'fresh greens');
+                const liquid = getAnyIngredient(['water', 'vegetable broth'], 'water');
+
+                recipes.push({
+                    name: `${vegMain} & ${vegSecondary} Savory Sauté`,
+                    description: `A quick and flavorful sauté combining your fresh ingredients, seasoned for a delightful taste.`,
+                    ingredients: [
+                        `${getDummyQuantity(vegMain)} ${vegMain}, sliced`,
+                        `${getDummyQuantity(vegSecondary)} ${vegSecondary}, diced`,
+                        `${getDummyQuantity(commonOil)} ${commonOil}`,
+                        `${getDummyQuantity(commonGarlic)} ${commonGarlic}`,
+                        `${getDummyQuantity(commonGinger)} ${commonGinger}`,
+                        `${getDummyQuantity(commonCumin)} ${commonCumin}`,
+                        `${getDummyQuantity(commonTurmeric)} ${commonTurmeric}`,
+                        `${getDummyQuantity(commonSalt)} ${commonSalt}`,
+                        `${getDummyQuantity(commonPepper)} ${commonPepper}`,
+                        `A splash of ${liquid} (if available)`
+                    ],
+                    instructions: [
+                        `1. Prepare ${vegMain} by slicing and ${vegSecondary} by dicing.`,
+                        `2. Heat ${getDummyQuantity(commonOil)} ${commonOil} in a large skillet over medium-high heat.`,
+                        `3. Add ${getDummyQuantity(commonGarlic)} ${commonGarlic} and ${getDummyQuantity(commonGinger)} ${commonGinger}. Sauté for 30 seconds until fragrant.`,
+                        `4. Add sliced ${vegMain} and diced ${vegSecondary}. Stir-fry for 5-7 minutes until vegetables are tender-crisp.`,
+                        `5. Stir in ${getDummyQuantity(commonCumin)} ${commonCumin}, ${getDummyQuantity(commonTurmeric)} ${commonTurmeric}, ${getDummyQuantity(commonSalt)} ${commonSalt}, and ${getDummyQuantity(commonPepper)} ${commonPepper}. Cook for another 1-2 minutes, tossing to coat.`,
+                        `6. If needed, add a splash of ${liquid} to prevent sticking. Serve hot as a side or light meal.`,
+                    ]
+                });
+
+                recipes.push({
+                    name: `Simple ${vegMain} & ${vegSecondary} Medley`,
+                    description: `A versatile dish that combines your vegetables into a wholesome and satisfying meal, simply prepared.`,
+                    ingredients: [
+                        `2 cups ${vegMain}, chopped`,
+                        `1 cup ${vegSecondary}, cut into florets`,
+                        `${getDummyQuantity(commonWater)} ${commonWater}`,
+                        `${getDummyQuantity(commonSalt)} ${commonSalt}`,
+                        `${getDummyQuantity(commonPepper)} ${commonPepper}`
+                    ],
+                    instructions: [
+                        `1. Chop ${vegMain} and cut ${vegSecondary} into florets.`,
+                        `2. In a medium pot, combine chopped ${vegMain} and ${vegSecondary}. Add ${getDummyQuantity(commonWater)} ${commonWater} to cover the vegetables.`,
+                        `3. Bring to a boil, then reduce heat to a simmer. Cook until vegetables are tender, about 10-15 minutes.`,
+                        `4. Drain any excess ${commonWater}. Season with ${getDummyQuantity(commonSalt)} ${commonSalt} and ${getDummyQuantity(commonPepper)} ${commonPepper} to taste.`,
+                        '5. Serve warm.',
+                    ]
+                });
+
+                 recipes.push({
+                    name: `Basic ${vegMain} & ${vegSecondary} Salad`,
+                    description: `A fresh and crisp salad, ideal for a light and healthy option.`,
+                    ingredients: [
+                        `3 cups ${vegMain}, roughly chopped`,
+                        `1.5 cups ${vegSecondary}, sliced thin`,
+                        `${getDummyQuantity('olive oil')} 1 tbsp ${commonOil} (if available)`, // Use the global commonOil var
+                        `${getDummyQuantity(commonSalt)} ${commonSalt}`,
+                        `${getDummyQuantity(commonPepper)} ${commonPepper}`,
+                    ],
+                    instructions: [
+                        `1. Roughly chop ${vegMain} and slice ${vegSecondary} thinly.`,
+                        `2. In a large bowl, gently combine chopped ${vegMain} and sliced ${vegSecondary}.`,
+                        `3. If '${commonOil}' is available, drizzle with ${getDummyQuantity('olive oil')} ${commonOil}.`,
+                        `4. Season lightly with ${getDummyQuantity(commonSalt)} ${commonSalt} and ${getDummyQuantity(commonPepper)} ${commonPepper}. Toss gently to mix.`,
+                        '5. Serve immediately as a refreshing side or main.',
+                    ]
+                });
+
+
+            } else if (selectedRecipeType === 'non-veg') {
+                const proteinMain = getPrimaryIngredient(0) || getAnyIngredient(['chicken', 'fish', 'beef', 'shrimp', 'eggs'], 'protein');
+                const vegSide = getPrimaryIngredient(1) || getAnyIngredient(['broccoli', 'bell pepper', 'carrot', 'onion'], 'vegetable');
+                // commonOil, commonSalt, commonPepper, commonGarlic, commonGinger, commonPaprika, commonWater are already defined globally.
+
+                recipes.push({
+                    name: `${proteinMain} & ${vegSide} Skillet Creation`,
+                    description: `A versatile skillet dish combining your main protein with a complementing vegetable, perfectly seasoned.`,
+                    ingredients: [
+                        `${getDummyQuantity(proteinMain)} ${proteinMain}, cut into pieces`,
+                        `${getDummyQuantity(vegSide)} ${vegSide}, chopped`,
+                        `${getDummyQuantity(commonOil)} ${commonOil}`,
+                        `${getDummyQuantity(commonSalt)} ${commonSalt}`,
+                        `${getDummyQuantity(commonPepper)} ${commonPepper}`,
+                        `${getDummyQuantity(commonGarlic)} ${commonGarlic}`,
+                        `${getDummyQuantity(commonPaprika)} ${commonPaprika}`,
+                    ],
+                    instructions: [
+                        `1. Cut ${proteinMain} into bite-sized pieces and chop ${vegSide}.`,
+                        `2. Heat ${getDummyQuantity(commonOil)} ${commonOil} in a large skillet over medium-high heat.`,
+                        `3. Add ${proteinMain} pieces and cook until browned and almost cooked through, about 5-8 minutes. Remove from pan and set aside.`,
+                        `4. Add chopped ${vegSide} to the same pan. If available, add ${getDummyQuantity(commonGarlic)} ${commonGarlic}. Sauté for 3-5 minutes until tender-crisp.`,
+                        `5. Return ${proteinMain} to the pan. Season with ${getDummyQuantity(commonSalt)} ${commonSalt}, ${getDummyQuantity(commonPepper)} ${commonPepper}, and ${getDummyQuantity(commonPaprika)} ${commonPaprika}. Toss to combine.`,
+                        '6. Cook for another 2-3 minutes until everything is heated through and flavors meld. Serve hot.'
+                    ]
+                });
+
+                recipes.push({
+                    name: `Simple Roasted ${proteinMain} & ${vegSide}`,
+                    description: `An easy and wholesome roasted dish, perfect for minimal effort and maximum flavor.`,
+                    ingredients: [
+                        `4 pieces ${proteinMain} (e.g., chicken pieces, fish fillets)`,
+                        `2 cups ${vegSide}, roughly chopped`,
+                        `${getDummyQuantity(commonOil)} ${commonOil}`,
+                        `${getDummyQuantity(commonSalt)} ${commonSalt}`,
+                        `${getDummyQuantity(commonPepper)} ${commonPepper}`,
+                        `1 tsp dried herbs (if 'dried herbs' is present in combinedIngredients)`,
+                    ],
+                    instructions: [
+                        `1. Preheat oven to 400°F (200°C). Pat dry ${proteinMain} pieces and roughly chop ${vegSide}.`,
+                        `2. In a large baking dish, arrange ${proteinMain} and chopped ${vegSide}.`,
+                        `3. Drizzle generously with ${getDummyQuantity(commonOil)} ${commonOil}. Season with ${getDummyQuantity('salt')} ${commonSalt} and ${getDummyQuantity('pepper')} ${commonPepper}.`,
+                        `4. If 'dried herbs' is available, sprinkle with 1 tsp dried herbs. Toss vegetables to coat.`,
+                        `5. Bake for 25-35 minutes, or until ${proteinMain} is cooked through and ${vegSide} are tender and slightly caramelized. Serve warm.`,
+                    ]
+                });
+
+                 recipes.push({
+                    name: `Poached ${proteinMain} with Gentle Seasoning`,
+                    description: `A light and tender way to prepare ${proteinMain}, retaining its delicate flavor.`,
+                    ingredients: [
+                        `${getDummyQuantity(proteinMain)} ${proteinMain} (e.g., chicken breast, fish fillets)`,
+                        `${getDummyQuantity(commonWater)} ${commonWater}`,
+                        `${getDummyQuantity(commonSalt)} ${commonSalt}`,
+                        `${getDummyQuantity(commonPepper)} ${commonPepper}`,
+                        `1 slice of ${getAnyIngredient(['lemon'], 'ginger')} (if lemon/ginger is available, otherwise omit)`
+                    ],
+                    instructions: [
+                        `1. Place ${proteinMain} pieces in a pot. Cover completely with ${getDummyQuantity(commonWater)} ${commonWater}.`,
+                        `2. Add ${getDummyQuantity(commonSalt)} ${commonSalt} and ${getDummyQuantity(commonPepper)} ${commonPepper}. If 'lemon' or 'ginger' is available, add 1 slice of ${getAnyIngredient(['lemon'], 'ginger')}.`,
+                        '3. Bring the water to a gentle simmer (do not boil rapidly).',
+                        `4. Cook for 10-15 minutes (for chicken/fish), or until ${proteinMain} is cooked through. Cooking time varies by thickness.`,
+                        '5. Carefully remove the cooked protein from the water and serve warm.',
+                    ]
+                });
+
+            } else if (selectedRecipeType === 'dessert') {
+                const sweetMain = getPrimaryIngredient(0) || getAnyIngredient(['apple', 'berries', 'banana', 'chocolate', 'strawberry', 'grape'], 'fruit');
+                const sweetFlavor = getPrimaryIngredient(1) || getAnyIngredient(['sugar', 'honey'], 'sweetener');
+                const binder = getPrimaryIngredient(2) || getAnyIngredient(['flour', 'egg', 'milk', 'butter'], 'binder');
+                const liquid = getAnyIngredient(['water', 'milk'], 'water'); // local alias, fine
+                // commonCinnamon, commonVanilla are defined globally.
+
+
+                recipes.push({
+                    name: `Sweet ${sweetMain} Medley`,
+                    description: `A refreshing and naturally sweet combination of your dessert ingredients.`,
+                    ingredients: [
+                        `${getDummyQuantity(sweetMain)} ${sweetMain}, diced`,
+                        `${getDummyQuantity('sugar')} ${sweetFlavor} (e.g., granulated sugar, honey)`,
+                        `${getDummyQuantity(commonCinnamon)} ${commonCinnamon} (if available)`,
+                    ],
+                    instructions: [
+                        `1. Dice ${sweetMain}.`,
+                        `2. In a bowl, combine diced ${sweetMain} with ${getDummyQuantity('sugar')} ${sweetFlavor}. Toss gently to coat.`,
+                        `3. If ${commonCinnamon} is available, sprinkle ${getDummyQuantity(commonCinnamon)} ${commonCinnamon} over the mixture and toss again.`,
+                        '4. Serve immediately or chill briefly for enhanced flavor.',
+                    ]
+                });
+
+                // Check for Milk as a specific liquid in combinedIngredients
+                if (sweetMain && sweetFlavor && binder && combinedIngredients.includes('milk')) {
+                    recipes.push({
+                        name: `Creamy ${sweetMain} & ${sweetFlavor} Pudding`,
+                        description: `A smooth, delightful pudding, perfect for a comforting sweet treat.`,
+                        ingredients: [
+                            `1 cup milk`,
+                            `${getDummyQuantity('sugar')} ${sweetFlavor}`,
+                            `${getDummyQuantity('flour')} ${binder} (e.g., cornstarch, flour) for thickening`,
+                            `${getDummyQuantity(commonVanilla)} ${commonVanilla} (if available)`,
+                        ],
+                        instructions: [
+                            `1. In a saucepan, whisk together 1 cup milk, ${getDummyQuantity('sugar')} ${sweetFlavor}, and ${getDummyQuantity('flour')} ${binder}.`,
+                            '2. Heat over medium-low heat, stirring constantly, until the mixture thickens to a pudding consistency. This may take 5-7 minutes.',
+                            `3. If ${commonVanilla} is available, stir in ${getDummyQuantity(commonVanilla)} ${commonVanilla}.`,
+                            '4. Pour into individual serving dishes and chill for at least 1 hour until set. Serve cold.',
+                        ]
+                    });
+                }
+                 if (sweetMain && combinedIngredients.includes('butter') && combinedIngredients.includes('sugar') && combinedIngredients.includes('flour')) {
+                    recipes.push({
+                        name: `Baked ${sweetMain} with Simple Sweet Topping`,
+                        description: `A warm, comforting baked dessert featuring ${sweetMain} with a sweet, homemade topping.`,
+                        ingredients: [
+                            `2 medium ${sweetMain}s, sliced`,
+                            `1/4 cup sugar`,
+                            `1/4 cup flour`,
+                            `2 tbsp butter, cold and cubed`,
+                            `${getDummyQuantity(commonCinnamon)} ${commonCinnamon} (if available)`,
+                        ],
+                        instructions: [
+                            `1. Preheat oven to 375°F (190°C). Slice ${sweetMain}s and place them evenly in a small baking dish.`,
+                            `2. In a separate small bowl, combine 1/4 cup sugar and 1/4 cup flour. Cut in 2 tbsp cold butter using a fork or your fingertips until the mixture resembles coarse crumbs.`,
+                            `3. If ${commonCinnamon} is available, add ${getDummyQuantity(commonCinnamon)} ${commonCinnamon} to the crumble mixture and mix well.`,
+                            '4. Sprinkle the prepared topping evenly over the sliced fruit in the baking dish.',
+                            '5. Bake for 25-35 minutes, or until the fruit is tender when pierced with a fork and the topping is golden brown and bubbly.',
+                            '6. Serve warm, perhaps with a dollop of cream if "cream" or "milk" is available among your ingredients.'
+                        ]
+                    });
+                }
+            }
+
+
+            // Filter out empty recipes that didn't have a valid combination
+            recipes = recipes.filter(recipe => recipe.ingredients.length > 0);
+
+            // If no recipes could be generated at all, provide a generic fallback
+            if (recipes.length === 0) {
+                 recipes.push({
+                    name: "Get Creative!",
+                    description: "We couldn't generate specific recipes with your current ingredients and meal type combination. Try adding more ingredients, including common cooking items like 'oil', 'salt', 'pepper', or 'water' if you have them. You can still experiment with simple preparation methods for your provided items!",
+                    ingredients: ["Your provided ingredients: " + (userIngredients.length > 0 ? userIngredients.map(capitalize).join(', ') : 'None')],
+                    instructions: ["1. Experiment with basic cooking methods like sautéing, boiling, or simple raw combinations.", "2. Adjust the meal type if your ingredients are very limited.", "3. Search for single-ingredient recipes if you only have one item."]
+                });
+            }
+
+            const dummyRecipeResponse = { recipes: recipes.slice(0, 3) }; // Ensure only up to 3 recipes are sent.
+
+
+            try {
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Call to Gemini API (for real implementation)
+                /*
+                const apiKey = ""; // If you want to use models other than gemini-2.0-flash, provide an API key here. Otherwise, leave this as-is.
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                let parsedRecipes = [];
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    // You would parse 'text' here into structured recipe objects
+                    // For example, if the API returns a JSON string, you'd JSON.parse(text)
+                    // For this dummy implementation, we're using hardcoded recipes
+                    parsedRecipes = dummyRecipeResponse.recipes; // Fallback to dummy for now
+                } else {
+                    console.error('Gemini API response was empty or malformed.');
+                    parsedRecipes = []; // No recipes from API, use fallback or show error
+                }
+                */
+
+                let allRecipesHtml = '';
+                if (dummyRecipeResponse.recipes && dummyRecipeResponse.recipes.length > 0) {
+                    dummyRecipeResponse.recipes.forEach(recipe => {
+                        allRecipesHtml += formatSingleRecipeOutput(recipe); // Append each formatted recipe
+                    });
+                } else {
+                    allRecipesHtml = '<p>No recipes found based on your exact ingredients. Please try different ingredients or a different recipe type.</p>';
+                }
+
+                recipeResultsDiv.innerHTML = allRecipesHtml; // Display all recipes directly
+
+            } catch (error) {
+                console.error('Error fetching recipes:', error);
+                recipeResultsDiv.innerHTML = '<p class="text-red-500">Failed to load recipes. Please try again. (Check console for errors)</p>';
+            } finally {
+                loadingSpinner.classList.add('hidden'); // Hide spinner
+            }
+        }
+
+        /**
+         * A helper function to format a single recipe object into HTML.
+         * This function now expects a structured recipe object.
+         * @param {object} recipeObject - Object with name, description, ingredients (array), instructions (array).
+         * @returns {string} Formatted HTML string for a single recipe.
+         */
+        function formatSingleRecipeOutput(recipeObject) {
+            let ingredientsHtml = recipeObject.ingredients.map(item => `<li>${item}</li>`).join('');
+            // Instructions are now pre-numbered in dummy data, just join them
+            let instructionsHtml = recipeObject.instructions.map(step => `<li>${step.replace(/^\d+\.\s*/, '')}</li>`).join('');
+
+
+            return `
+                <div class="recipe-card recipe-output">
+                    <h3>${recipeObject.name}</h3>
+                    <p>${recipeObject.description}</p>
+                    <h4>Ingredients</h4>
+                    <ul>${ingredientsHtml}</ul>
+                    <h4>Instructions</h4>
+                    <ol>${instructionsHtml}</ol>
+                </div>
+            `;
+        }
+
+        // This function is no longer the primary formatting function, but kept for reference
+        function formatRecipeOutput(rawText) {
+            let html = rawText;
+
+            // Convert headings
+            html = html.replace(/^###\s*(.*)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^####\s*(.*)$/gm, '<h4>$1</h4>');
+
+            // Convert brief description (lines immediately following <h3> or <h4> that are not lists)
+            html = html.replace(/(<\/h3>|<p>)\s*\n\s*([^<\n][^<\n]*)\n/g, '$1\n<p>$2</p>\n');
+
+
+            // Convert unordered lists
+            // First, replace markdown list items with <li>. Handle multi-line list items.
+            html = html.replace(/^(?:\*|-)\s+(.*(?:\n(?!\s*(?:\*|-|\d+\.))[^<\n]*)*)/gm, '<li>$1</li>');
+            // Then, wrap consecutive <li> items in <ul> tags.
+            html = html.replace(/((?:<li>.*?<\/li>\s*)+)/gs, '<ul>$1</ul>');
+
+
+            // Convert ordered lists
+            // First, replace markdown list items with <li>. Handle multi-line list items.
+            html = html.replace(/^(\d+)\.\s+(.*(?:\n(?!\s*(?:\*|-|\d+\.))[^<\n]*)*)/gm, '<li>$2</li>');
+            // Then, wrap consecutive <li> items in <ol> tags.
+            html = html.replace(/((?:<li>.*?<\/li>\s*)+)/gs, '<ol>$1</ol>');
+
+
+            // Ensure lone text lines get wrapped in <p> if they haven't been by other rules
+            html = html.split('\n').map(line => {
+                const trimmedLine = line.trim();
+                if (trimmedLine.length === 0) return ''; // Skip empty lines
+                // Check if the line already starts with an HTML tag (h3, h4, p, ul, ol, li)
+                if (trimmedLine.match(/^(<h[34]>|<p>|<ul|<ol|<li)/i)) {
+                    return trimmedLine;
+                }
+                return `<p>${trimmedLine}</p>`;
+            }).join('\n');
+
+            // Clean up any empty paragraphs that might have resulted
+            html = html.replace(/<p>\s*<\/p>/g, '');
+
+            return html;
+        }
+
+    </script>
+</body>
+</html>
